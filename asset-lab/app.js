@@ -527,6 +527,7 @@ function scheduleDrawerClose() {
 function showModeCards() {
   els.modeCards.hidden = false;
   requestAnimationFrame(() => els.modeCards.classList.add('visible'));
+  setTimeout(showCharacterClickGuide, 360);
 }
 
 function closeModeCards(callback) {
@@ -847,10 +848,7 @@ els.generationModeCard.addEventListener('click', (event) => {
 });
 els.editorModeCard.addEventListener('click', (event) => {
   event.stopPropagation();
-  closeModeCards(() => {
-    setDrawer(false);
-    setTimeout(showCharacterClickGuide, 320);
-  });
+  closeModeCards(() => setDrawer(false));
 });
 els.regenerateFrameBtn.addEventListener('click', () => openGenerationStudio(true));
 els.closeGenerateBtn.addEventListener('click', () => els.generationModal.close());
@@ -919,7 +917,7 @@ window.addEventListener('mouseup', () => {
 });
 
 els.characterFrame.addEventListener('click', (event) => {
-  if (drag.moved || !bootState.complete || !bootState.choiceMade) return;
+  if (drag.moved || !bootState.complete) return;
   event.stopPropagation();
   startCharacterWalk();
 });
