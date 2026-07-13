@@ -569,9 +569,11 @@ function bootReveal() {
   document.body.appendChild(spotlight);
 
   const bootScreen = document.getElementById('bootScreen');
+  const bootWordmark = document.getElementById('bootWordmark');
   if (bootScreen) setTimeout(() => bootScreen.remove(), 100);
   setTimeout(() => {
     spotlight.remove();
+    bootWordmark?.remove();
     bootState.complete = true;
     showModeCards();
   }, 3000);
