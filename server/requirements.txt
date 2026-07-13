@@ -1,0 +1,5 @@
+Pillow>=10.0
+
+# Optional higher-quality subject segmentation used by the upstream team pipeline:
+# rembg>=2.0
+# onnxruntime>=1.16

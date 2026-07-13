@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=181" />
+  <link rel="stylesheet" href="./styles.css?v=200" />
 </head>
 <body>
   <div id="bootScreen" style="position: fixed; inset: 0; background: black; z-index: 9998; pointer-events: none;"></div>
@@ -17,9 +17,11 @@
       <button id="sidebarToggle" class="sidebar-toggle" aria-label="收起资产抽屉">‹</button>
       <div class="brand"><span class="brand-mark">W</span><div><strong>Windup</strong><small>人物资产实验室</small></div></div>
       <div class="project-switch"><span>项目</span><strong>点灯人 · MVP</strong><b>⌄</b></div>
+      <label class="character-picker"><span>当前角色</span><select id="characterSelect"></select></label>
+      <button id="openGenerateBtn" class="generation-entry"><span>✦</span><b>生成中心</b><small>整套 / 单帧</small></button>
       <nav class="asset-tree">
         <p class="eyebrow">资产结构</p>
-        <button class="tree-row"><span class="tree-icon">人</span><span><b>点灯少年</b><small>角色身份 · 已锁定</small></span><i class="lock">锁</i></button>
+        <button class="tree-row"><span class="tree-icon">人</span><span><b id="characterName">点灯少年</b><small>角色母版 · 一致性锁定</small></span><i class="lock">锁</i></button>
         <div class="tree-branch">
           <button class="tree-row active"><span class="tree-icon">衣</span><span><b>常态造型</b><small>造型 v1 · 当前</small></span></button>
         </div>
@@ -107,7 +109,7 @@
             <div class="accordion-body">
               <div class="frame-meta"><span>批次 <b id="frameBatch">B-20260713-05</b></span><span>状态 <b id="frameState">待审核</b></span></div>
               <textarea id="reviewNote" placeholder="退回原因或审核备注…"></textarea>
-              <div class="review-actions"><button id="rejectBtn" class="reject-btn">退回此帧</button><button id="approveBtn" class="approve-btn">通过此帧</button></div>
+              <div class="review-actions"><button id="rejectBtn" class="reject-btn">退回此帧</button><button id="approveBtn" class="approve-btn">通过此帧</button><button id="regenerateFrameBtn" class="regenerate-btn">✦ 重生成此帧</button></div>
             </div>
           </details>
           <details class="accordion-item">
@@ -148,6 +150,32 @@
       <footer><span>该图集完全符合小游戏 4MB 限制，可直接进远程加载目录。</span><button id="downloadPackBtn" class="approve-btn">下载图集与 JSON</button></footer>
     </div>
   </dialog>
-  <script src="./app.js"></script>
+  <dialog id="generationModal" class="generation-modal">
+    <div class="generation-shell">
+      <header><div><span class="generation-kicker">WINDUP PIPELINE</span><b>角色生成中心</b></div><div class="provider"><i id="providerDot"></i><span id="providerStatus">正在检查服务…</span></div><button id="closeGenerateBtn" aria-label="关闭">×</button></header>
+      <div class="generation-body">
+        <section class="generation-form">
+          <div class="generation-identity"><img id="genPortrait" alt="角色母版"><div><small>角色母版</small><b id="genCharacterName">点灯少年</b><span>每帧共用同一母版、描述和动作相位</span></div></div>
+          <div class="generation-fields">
+            <label>视角<select id="genView"><option value="side">横屏侧视</option><option value="topdown">俯视</option><option value="isometric">2.5D</option></select></label>
+            <label>动作<select id="genAction"><option value="idle">呼吸待机</option><option value="walk">行走</option><option value="run">奔跑</option><option value="jump">跳跃</option><option value="lantern">举灯点亮</option></select></label>
+            <label>生成范围<select id="genMode"><option value="full">整套动作 · 8 帧</option><option value="single">仅修复单帧</option></select></label>
+            <label id="genFrameField">帧号<input id="genFrame" type="number" min="1" max="8" value="1"></label>
+          </div>
+          <div class="phase-map"><span>接触</span><i></i><span>下沉</span><i></i><span>交叉</span><i></i><span>上升</span><i></i><span>反向循环</span></div>
+          <button id="startGenerationBtn" class="start-generation">开始生成</button>
+          <p class="generation-note">真实 API 只在本地后端读取密钥；Demo 模式可先零成本验证全流程。</p>
+        </section>
+        <section class="generation-output">
+          <div class="job-head"><div><small>生成任务</small><b id="genBatch">尚未开始</b></div><span id="genPercent">0%</span></div>
+          <div class="job-progress"><i id="genProgress"></i></div>
+          <p id="genMessage">选择动作后开始生成。结果先进入候选区，不会直接覆盖正式资产。</p>
+          <div id="candidateGrid" class="candidate-grid"><div class="candidate-empty">候选帧将在这里逐帧出现</div></div>
+          <footer><span>人工确认后才会推入审核台与 Cocos</span><button id="promoteJobBtn" disabled>接受候选资产</button></footer>
+        </section>
+      </div>
+    </div>
+  </dialog>
+  <script src="./app.js?v=200"></script>
 </body>
 </html>

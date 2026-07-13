@@ -1,0 +1,11 @@
+{
+  "name": "skeleton",
+  "desc": "A cartoonish skeleton, thin and bony, wearing dark grey segmented armor, a flowing red scarf, and holding a broad, blood-stained sword with a jagged edge.",
+  "palette": "light bone, dark grey, red, brown, silver, black",
+  "view": "profile",
+  "base_frame": "characters/skeleton/01_base/chosen_base.png",
+  "ref_image": "./_skeleton_ref.png",
+  "version": "v1",
+  "parent_version": null,
+  "created_ts": 1783938537.297068
+}

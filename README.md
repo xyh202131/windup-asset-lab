@@ -1,146 +1,163 @@
-# Windup · 角色素材审核编辑器（切片原型）
+# Windup Character Studio
 
-> 本仓库是实习项目 **Windup** 的一个**切片原型**：一个 2D 游戏角色素材的**可视化审核编辑器与素材管理器**，演示「素材管理 → 逐帧审核 → 几何质检 → 导出 → 真实引擎联调」这一段工作流。
->
-> 仓库里的「点灯人」是导入编辑器用于跑通流程的**演示样例角色**，`build/lamplighter-mvp`（Cocos）是「真实引擎验证」环节的**联调靶子**——都不是交付产品，产品是编辑器本身。
+> 从角色母版到 Cocos 可播资产的 2D 人物生成、审核与引擎验证工作台。
 
-<p>
-<img alt="product" src="https://img.shields.io/badge/Windup-角色素材生成编辑器-1f6feb">
-<img alt="scope" src="https://img.shields.io/badge/本仓库-审核·质检·导出·联调切片-8957e5">
-<img alt="stack" src="https://img.shields.io/badge/前端-原生%20JS%20无框架-f7df1e">
-<img alt="engine" src="https://img.shields.io/badge/联调靶子-Cocos%203.8.8-555">
-</p>
+![Windup Asset Lab](reports/asset-lab-final.png)
 
----
+Windup 面向国内小游戏独立开发者和微型团队：用户提供角色参考图或文字定义，系统生成成套动作，自动完成去背景、归一化、对齐、质检与打包，最后把“一组图”变成“放进 Cocos 就能播的角色”。
 
-## 一、Windup 是什么
+本仓库是可运行的端到端原型，而不只是静态编辑器。
 
-Windup 是一款面向「想做游戏、但没有美术产能」的国内小游戏个人开发者与微型团队的 **2D 游戏角色动态素材生成工具**。用户提供文字描述或参考图，即可为一个角色定制成套动作序列，最终交付一个跨动作始终一致、能**直接导入 Cocos Creator / 微信小游戏**的完整素材包，免去手工去背、切帧、对齐脚底线、命名与引擎配置。
+## 现在可以做什么
 
-它与竞品的差别在整条「从生成到入项目」的链路，而不止交付形态：海外竞品（Ludo、Meowa、PixelLab…）交付的是一段动画的**图片**，且无一原生适配国产小游戏生态；Windup 交付的是一个**放进项目就能播的角色**。节奏上采用「AI 生成、人确认」——AI 负责生成与自动质检，人在角色卡确认、动作清单定制、逐帧检查三处掌握决定权。
+- 在角色目录中切换、预览和审核多个像素角色。
+- 按横屏侧视、俯视、2.5D 组织独立资产，缺口显式可见。
+- 以固定 8 FPS 播放动作，支持逐帧、洋葱皮、自动巡走和键盘操控。
+- 从本地生成中心发起整套 8 帧或单帧修复任务。
+- 生成结果先进入候选区，人工确认后才覆盖正式资产，原帧自动备份。
+- 在浏览器内执行 Alpha、脚底线、主体高度、质心位移、轮廓面积和循环接缝质检。
+- 逐帧通过或退回，只有全部通过才解锁 Cocos 图集导出。
+- 将当前角色、视角和动作同步到真实 Cocos Creator Web 运行时。
 
-> 完整产品定义在实习主仓库 [`1024XEngineer/game-asset-character`](https://github.com/1024XEngineer)。本仓库只是其中一段工作流的可交互切片。
+## 协作来源
 
-Windup 以「角色」为中心组织素材：
+本仓库与队友的 [johnnyzhang-eng/windup-pipeline](https://github.com/johnnyzhang-eng/windup-pipeline) 互补协作：
 
+- `windup-pipeline` 提供角色母版、分帧生成、单帧重绘、对齐、质检、修复与溯源的 Python 实现路径。
+- 本仓库把这条生成管线接入可视化产品界面，增加人工审核门禁、多角色资产库和 Cocos 联调。
+- 仓库内 `Boy`、`Skeleton`、`Lirael` 演示角色来自队友管线产物，原始角色卡与 provenance 保留在 `artifacts/characters/`。
+- `server/windup_pipeline/` 是为原型集成而内置的管线模块；后续建议改为固定版本的 package 依赖，保持双仓库清晰演进。
+
+队友的横向 sprite sheet 必须按原始单元格精确切分，不能再次缩放或用系统裁图的居中偏移。仓库内置了无损适配器：
+
+```bash
+node tools/import-windup-sheet.js \
+  /path/to/walk_sheet.png \
+  assets/resources/characters/<character>/views/side \
+  8 walk
 ```
-项目（题材 / 风格 / 目标环境）
-└─ 角色（身份：脸 / 体型 / 关键标志）
-    └─ 造型（角色身份 + 一套穿戴 → 基准帧）
-        └─ 动作实例（该造型下某动作的成套帧）
-            └─ 帧（生成 / 检查的最小单位）
-生成批次（可溯源，路线可替换） · 导出包（Cocos / 微信，远程加载）
-```
 
-## 二、这个切片在整条链路里的位置
-
-Windup 端到端流程（🧑 人确认 / 🤖 AI 生成 / ⚙️ 工程自动）：
+## 产品流程
 
 ```mermaid
 flowchart LR
-  P1["创建项目 🧑"] --> P2["角色卡确认 🧑🤖"]
-  P2 --> P3["动作清单 🧑"]
-  P3 --> P4["逐动作生成 + 自动质检 🤖⚙️"]
-  P4 --> P5["逐帧检查 🧑"]
-  P5 --> P6["导出素材包 ⚙️"]
-  P6 --> P7["进引擎播放 🧑"]
-  classDef here fill:#1f6feb,stroke:#1f6feb,color:#fff;
-  class P4,P5,P6,P7 here;
+  A["角色母版"] --> B["动作与视角规格"]
+  B --> C["8 帧生成 / 单帧修复"]
+  C --> D["去背景与 256×256 归一化"]
+  D --> E["自动质检"]
+  E --> F["候选区"]
+  F --> G["逐帧人工审核"]
+  G --> H["Cocos 图集 / 真实引擎播放"]
+  G -."退回单帧".-> C
 ```
 
-本仓库聚焦其中偏后的 **「素材管理 → 逐帧审核质检 → 导出 → 真实引擎验证」**（上图蓝色段）。它用一个已备好序列帧的样例角色，把这几环做成可点、可播、可审、可导、可联调的原型，重点验证**用户是否理解角色卡 / 动作清单 / 逐帧检查 / 导出**这套心智模型——生成质量本身由另一条实测线单独验证。
+一致性不靠“多写几句提示词”，而是依靠一组可追溯约束：同一角色母版、固定角色描述、显式动作相位、统一脚底基线、局部重生和人工准入。
 
-## 三、快速开始
+## 快速开始
+
+### 1. 启动资产工作台
+
+Python 3.11+ 并安装 Pillow：
 
 ```bash
-# 1) 启动联调靶子：已构建的 Cocos Web 工程（真实引擎验证环节）
+python3 -m pip install -r server/requirements.txt
+python3 server/app.py --demo
+```
+
+Demo 模式不调用外部 API，可用现有帧跑通完整任务。
+
+真实生成时，密钥只进入后端进程：
+
+```bash
+SUFY_KEY="your-key" python3 server/app.py
+```
+
+可选环境变量：
+
+| 变量 | 作用 | 默认值 |
+|---|---|---|
+| `SUFY_KEY` | OpenAI-compatible 图像 API 密钥 | 无 |
+| `SUFY_BASE` | API Base URL | `https://openai.sufy.com/v1` |
+| `SUFY_IMAGE_MODEL` | 图像生成模型 | `gemini-2.5-flash-image` |
+
+### 2. 启动 Cocos 联调靶子
+
+```bash
 python3 -m http.server 4173 --bind 127.0.0.1 --directory build/lamplighter-mvp
-
-# 2) 启动编辑器切片（另开一个终端）
-python3 -m http.server 4174 --bind 127.0.0.1 --directory .
 ```
 
-- 审核编辑器：<http://127.0.0.1:4174/asset-lab/>
-- 联调靶子（Cocos）：<http://127.0.0.1:4173/>
-- 舞台内操作：`A / D` 或 `← / →` 移动样例角色、拖拽角色标定脚底锚点、暂停后方向键逐帧微调
-
-## 四、这个切片包含什么
-
-### 1. `asset-lab/` — 可视化审核编辑器 / 素材管理器（核心）
-
-无构建步骤的纯前端应用（`app.js` / `index.html` / `styles.css`）：
-
-- **素材管理树** — 左侧按「角色 / 造型 / 动作实例」组织，多视角切换（横屏侧视 / 俯视 / 2.5D，各用各的帧资产，不用 CSS 伪造视角），该视角缺失的动作显式标为「缺口」。
-- **逐帧审核台** — 帧状态机 `待审核 → 通过 / 退回`，逐帧独立通过或退回、绑定生成批次、状态持久化到本地；洋葱皮叠加前后帧对照相位。
-- **角色可视化舞台** — 播放 / 暂停 / 逐帧、`A/D` 驱动样例角色横向巡走、拖拽标定脚底锚点、暂停后方向键做逐帧像素微调。
-- **几何自动质检** — 在浏览器内用 Canvas 逐帧扫描像素，实时算出 7 项连续性指标（见第六节）。
-- **导出门禁 + 图集打包** — **全部帧通过才解锁导出**，一键生成 sprite sheet 与 TexturePacker 风格 metadata（含锚点归一化坐标）。
-- **真实引擎联调** — 通过 `postMessage` 把当前视角 / 动作 / 循环 / FPS 推给 Cocos，引擎动态加载真实帧并回执；编辑器不自己模拟一个假引擎。
-
-### 2. `tools/` — 处理工具链
-
-| 工具 | 职责 |
+| 入口 | 地址 |
 |---|---|
-| `process-action-sheet.js` | 按大图宽度比例切帧（不假设整除），Alpha 轮廓裁白，最近邻缩放，统一 256×256 |
-| `process-sprites.js` | 精灵批处理：裁切、Alpha、合成、PNG 导出 |
-| `audit-animation.js` | 命令行动画质检，按 `locomotion / jump / oneshot` 分规则，输出可作 CI 门禁 |
+| 角色资产工作台 | <http://127.0.0.1:4174/asset-lab/> |
+| Cocos Web 运行时 | <http://127.0.0.1:4173/> |
 
-### 3. `build/lamplighter-mvp/` — 引擎联调靶子
+## 生成任务模型
 
-一个 Cocos Creator 3.8.8 的 Web 构建，**仅供「真实引擎验证」环节**：把审核通过的动作推进去，在真实引擎里看大小、锚点、速度与循环是否成立。它不是一款游戏，也不是本项目的交付物。
+```text
+POST /api/generations
+  ├─ character: lamplighter | boy | skeleton | lirael
+  ├─ view: side | topdown | isometric
+  ├─ action: idle | walk | run | jump | lantern
+  ├─ mode: full | single
+  └─ frameIndex: 0..7
 
-## 五、演示样例说明
-
-「点灯人」（周师傅）是为跑通这条流水线而准备的**样例角色素材**，不是产品要做的游戏。相关文件均服务于演示：
-
-- `GAME_SPEC.md` — 该演示角色的设定稿（用作生成时的母版约束描述）
-- `artifacts/` — 它的原始生成大图与提示词留档（历史可回溯，不覆盖）
-- `assets/resources/character/` — 已切好、可直接加载的序列帧
-
-## 六、几何质检指标
-
-自动质检是第一道门，只回答「几何上稳不稳」，回答不了「美术对不对」——脚步是否反了、角色是否变脸仍需人工逐帧审核。
-
-| 检查项 | 判据（locomotion 示例） |
-|---|---|
-| 画布一致 | 全部帧 256×256 |
-| 透明背景 | 不透明像素占比 < 65% |
-| 脚底线偏差 | ≤ 3px |
-| 主体高度偏差 | ≤ 7px |
-| 相邻帧位移连续性 | 最大质心位移 ≤ 中值 × 2.6 + 2 |
-| 轮廓面积波动 | 循环 ≤ 18% / 单次 ≤ 28% |
-| 循环首尾接缝 | 位移 ≤ 10px 且面积差 ≤ 14%（仅循环动作） |
-
-实测样例（详见 [`reports/`](./reports)）：`side / walk / 8 帧` 得 100/100 通过；`side / jump / 8 帧` 得 67/100，检出相邻帧位移最大 23.8px、轮廓面积波动 42.8%，判定不应直接入库——正是这类指标拦住「看着差不多、其实会跳变」的素材。
-
-## 七、目录结构
-
-```
-点灯人/
-├── asset-lab/         审核编辑器切片：素材管理 · 逐帧审核 · 质检 · 导出 · 联调
-├── tools/             切帧 / 抠图 / 归一化 / 命令行质检脚本
-├── assets/            Cocos 工程源码与样例角色帧资产
-│   ├── scripts/       GameRoot.ts — 联调靶子的引擎侧逻辑
-│   └── resources/     character/ — 可直接加载的序列帧
-├── build/             引擎联调靶子（Cocos Web 构建 lamplighter-mvp）
-├── artifacts/         样例角色的原始生成图与提示词（留档可回溯）
-├── reports/           实测质检报告与验证截图
-├── GAME_SPEC.md       演示样例角色的设定稿
-└── HANDOFF.md         切片交接说明
+queued → generating → awaiting_review → approved
+                              └─ failed
 ```
 
-## 八、概念对应（对齐产品定义）
+- 任务过程持久化在 `generation-data/jobs/`，默认不进入 Git。
+- 正式采用前保留原帧到 `generation-data/backups/`。
+- 运行时 provenance 记录模型、提示、耗时和生成方式。
+- 前端永远无法读取 `SUFY_KEY`，网页部署不会携带密钥。
 
-| 本切片里的实现 | 对应 Windup 产品概念 |
-|---|---|
-| 左侧资产树 / 视角与动作切换 | 项目 → 角色 → 造型 → 动作实例的素材组织 |
-| 逐帧审核台的通过 / 退回 | 帧状态机（待审核 → 通过 / 退回，退回单帧不影响已通过帧） |
-| 每个资产的批次号 | 生成批次（可溯源，路线可替换） |
-| 导出门禁 + 图集打包 | 导出包（全帧通过才出，Cocos / 微信远程加载） |
-| postMessage 引擎联调 | 「进引擎首次播放」的验证环节 |
+## 技术架构
 
-## 九、技术栈与安全边界
+| 层 | 实现 | 职责 |
+|---|---|---|
+| 交互层 | HTML / CSS / Vanilla JS | 角色目录、播放、逐帧审核、候选采用、图集导出 |
+| 生成层 | Python `ThreadingHTTPServer` | 同源静态服务、安全 API 代理、后台任务、溯源与备份 |
+| 处理层 | Pillow + Windup Pipeline | 固定背景去除、256×256 归一化、动作相位 |
+| 质检层 | Canvas + Node tools | 几何连续性分析、CI 可用审计报告 |
+| 引擎层 | Cocos Creator 3.8.8 | 真实 SpriteFrame 加载、8 FPS 播放、`postMessage` 联调 |
 
-原生前端（无框架） · Canvas 像素扫描 · Cocos Creator 3.8.8（联调靶子） · Node.js + Sharp（离线处理脚本）· `postMessage` 联调桥。
+## 目录
 
-**安全边界**：AI 生成 API 只由本地资产工具调用，API Key 不进入编辑器前端、Cocos 客户端、Git 或笔记库。
+```text
+.
+├─ asset-lab/                    # 角色生成、审核、质检与导出界面
+├─ assets/
+│  ├─ resources/character/      # 点灯少年正式资产
+│  ├─ resources/characters/     # 队友管线的多角色资产
+│  └─ scripts/GameRoot.ts       # Cocos 联调协议与运行时
+├─ artifacts/characters/          # 角色卡和原始溯源
+├─ server/
+│  ├─ app.py                    # 安全后端、任务队列、候选采用
+│  └─ windup_pipeline/          # 队友管线集成模块
+├─ tools/                         # 切帧、扣图、归一化、动画审计
+├─ build/lamplighter-mvp/         # 可部署的 Cocos Web 构建
+├─ reports/                       # 质检结果与实测报告
+├─ GAME_SPEC.md                   # 演示角色与 MVP 规格
+└─ HANDOFF.md                     # 项目交接
+```
+
+## 质检边界
+
+自动质检是第一道门，它能发现尺寸跳变、脚底漂移、主体面积突变和循环断层，但不能可靠判断“脚是否反了”、角色是否变脸、衣装细节是否走样。因此 Windup 保留三处人的决策：角色母版锁定、候选采用、逐帧通过。
+
+## 安全与部署
+
+- 不要把 API Key 写入前端、Cocos、`.env` 或 Git 记录。
+- 静态网页可单独部署；需要真实生成时，同时部署 `server/app.py` 或将 `/api` 转发到等价后端。
+- `build/lamplighter-mvp/` 可直接作为静态目录部署；工作台与 Cocos 跨域部署时需同步调整 `GAME_ORIGIN`。
+- 生成任务目录可能包含用户参考图和提示，生产环境应配置访问控制、生命周期和对象存储。
+
+## 当前缺口
+
+- 俯视与 2.5D 的通用动作矩阵还未补齐。
+- 任务状态仍是本地文件 + 内存索引，多实例部署需改为持久化队列。
+- 去背景默认使用品红键色距离；生产版应接入 rembg 或模型 Alpha 输出。
+- 模型成本、重试次数和质检分数还需进入统一的批次面板。
+
+---
+
+这个原型的核心不是“再做一个图片生成页”，而是让生成资产经过可修复、可审核、可追溯、可进引擎的完整产品链。

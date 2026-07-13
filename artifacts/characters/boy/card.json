@@ -1,0 +1,11 @@
+{
+  "name": "boy",
+  "desc": "A young, slender pixel art boy with messy black hair, wearing a dark blue long coat over a brown vest and white shirt, with a red scarf around his neck and brown pants and boots.",
+  "palette": "dark blue, red, brown, black, white, tan",
+  "view": "profile",
+  "base_frame": "characters/boy/01_base/chosen_base.png",
+  "ref_image": "./_boy_ref.png",
+  "version": "v1",
+  "parent_version": null,
+  "created_ts": 1783936735.8730261
+}

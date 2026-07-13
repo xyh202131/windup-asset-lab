@@ -26,3 +26,11 @@ node_modules/
 
 .DS_Store
 *.bak
+assets/resources/character.zip.meta
+
+# Generation runtime: jobs may contain API-produced images and prompts.
+/generation-data/jobs/
+/generation-data/backups/
+/generation-data/provenance.jsonl
+.env
+.env.*

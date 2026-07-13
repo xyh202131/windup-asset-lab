@@ -203,11 +203,13 @@ export class GameRoot extends Component {
   }
 
   private onPreviewMessage = (event: MessageEvent): void => {
-    const request = event.data as { type?: string; action?: string; view?: string; fps?: number; loop?: boolean };
+    const request = event.data as { type?: string; character?: string; action?: string; view?: string; fps?: number; loop?: boolean };
     if (request?.type !== 'windup:preview-animation' || !request.action || !request.view) return;
-    const base = request.view === 'side' && request.action === 'walk'
-      ? 'character/frames'
-      : `character/views/${request.view}`;
+    const supportedCharacters = ['lamplighter', 'boy', 'skeleton', 'lirael'];
+    const character = request.character && supportedCharacters.includes(request.character) ? request.character : 'lamplighter';
+    const base = character === 'lamplighter'
+      ? request.view === 'side' && request.action === 'walk' ? 'character/frames' : `character/views/${request.view}`
+      : `characters/${character}/views/${request.view}`;
     const token = ++this.previewToken;
     if (this.characterNode) tween(this.characterNode).to(0.14, { scale: new Vec3(this.direction * 0.86, 0.86, 1) }).start();
     resources.loadDir(base, SpriteFrame, (error, loadedFrames) => {
@@ -231,7 +233,7 @@ export class GameRoot extends Component {
       this.frameTime = 0;
       this.applyFrame();
       if (this.characterNode) tween(this.characterNode).to(0.22, { scale: new Vec3(this.direction, 1, 1) }).start();
-      this.postPreviewMessage({ type: 'windup:preview-applied', action: request.action, view: request.view, frames: matches.length });
+      this.postPreviewMessage({ type: 'windup:preview-applied', character, action: request.action, view: request.view, frames: matches.length });
     });
   };
 

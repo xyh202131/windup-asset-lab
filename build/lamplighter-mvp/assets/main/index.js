@@ -67,7 +67,9 @@ System.register("chunks:///_virtual/GameRoot.ts", ['./rollupPluginModLoBabelHelp
           _this.onPreviewMessage = function (event) {
             var request = event.data;
             if ((request == null ? void 0 : request.type) !== 'windup:preview-animation' || !request.action || !request.view) return;
-            var base = request.view === 'side' && request.action === 'walk' ? 'character/frames' : "character/views/" + request.view;
+            var supportedCharacters = ['lamplighter', 'boy', 'skeleton', 'lirael'];
+            var character = request.character && supportedCharacters.includes(request.character) ? request.character : 'lamplighter';
+            var base = character === 'lamplighter' ? request.view === 'side' && request.action === 'walk' ? 'character/frames' : "character/views/" + request.view : "characters/" + character + "/views/" + request.view;
             var token = ++_this.previewToken;
             if (_this.characterNode) tween(_this.characterNode).to(0.14, {
               scale: new Vec3(_this.direction * 0.86, 0.86, 1)
@@ -107,6 +109,7 @@ System.register("chunks:///_virtual/GameRoot.ts", ['./rollupPluginModLoBabelHelp
               }).start();
               _this.postPreviewMessage({
                 type: 'windup:preview-applied',
+                character: character,
                 action: request.action,
                 view: request.view,
                 frames: matches.length

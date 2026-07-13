@@ -14,7 +14,7 @@ const makeFrames = (base, prefix, count = 8) =>
 
 // 三种视角 × 若干动作。每个资产记录帧序、FPS、是否循环、生成批次号，
 // 以及首次进入审核台时的默认状态（initial / rejected）。
-const library = {
+const lamplighterLibrary = {
   side: {
     label: '横屏侧视资产', truth: '真实侧视序列帧',
     idle: { label: '呼吸待机', key: 'idle', frames: makeFrames(`${root}/views/side`, 'idle'), fps: 8, loop: true, batch: 'B-20260713-11', initial: 'pending' },
@@ -34,6 +34,27 @@ const library = {
     run: { label: '奔跑', key: 'run', frames: makeFrames(`${root}/views/isometric`, 'run'), fps: 8, loop: true, batch: 'B-20260713-14', initial: 'pending' },
   },
 };
+
+const teammateRoot = '../assets/resources/characters';
+const emptyView = (label, truth) => ({ label, truth });
+const teammateLibrary = (character, count = 8) => ({
+  side: {
+    label: '横屏侧视资产', truth: '队友 Windup 管线生成 · 保留溯源',
+    walk: { label: '行走', key: 'walk', frames: makeFrames(`${teammateRoot}/${character}/views/side`, 'walk', count), fps: 8, loop: true, batch: `TEAM-${character.toUpperCase()}-WALK`, initial: 'pending' },
+  },
+  topdown: emptyView('真实俯视资产', '尚未生成：不使用伪透视替代'),
+  isometric: emptyView('真实 2.5D 资产', '尚未生成：不使用伪透视替代'),
+});
+
+const characterCatalog = {
+  lamplighter: { label: '点灯少年', base: `${root}/frames/walk-01.png`, library: lamplighterLibrary },
+  boy: { label: 'Boy · 队友资产', base: `${teammateRoot}/boy/base.png`, library: teammateLibrary('boy') },
+  skeleton: { label: 'Skeleton · 队友资产', base: `${teammateRoot}/skeleton/base.png`, library: teammateLibrary('skeleton') },
+  lirael: { label: 'Lirael · 队友资产', base: `${teammateRoot}/lirael/base.png`, library: teammateLibrary('lirael', 4) },
+};
+
+let activeCharacterId = 'lamplighter';
+let library = characterCatalog[activeCharacterId].library;
 
 const actionOrder = ['idle', 'walk', 'run', 'jump', 'lantern'];
 const actionLabels = {
@@ -65,6 +86,8 @@ const state = {
   reviews: JSON.parse(localStorage.getItem('windup-review-state') || '{}'),
 };
 
+const generationState = { job: null, poll: null };
+
 const movement = { x: 0, direction: 1, left: false, right: false, auto: false, wasMoving: false, lastTime: performance.now() };
 
 // 逐帧像素微调（按 动作_视角_帧 存偏移）与全局脚底锚点，供图集导出写入 metadata。
@@ -82,7 +105,7 @@ const els = collect([
   // 布局与抽屉
   'assetDrawer', 'sidebarToggle', 'sidebarReveal', 'drawerHotspot',
   // 侧栏动作列表与批次
-  'actionList', 'batchId', 'batchRoute', 'actionName',
+  'actionList', 'batchId', 'batchRoute', 'actionName', 'characterSelect', 'characterName', 'openGenerateBtn',
   // 顶部操作
   'exportBtn', 'gamePreviewBtn', 'enterGameBtn',
   // Cocos 联调面板
@@ -97,12 +120,16 @@ const els = collect([
   // 质检
   'qcSummary', 'qcChecks',
   // 逐帧审核
-  'selectedFrame', 'frameBatch', 'frameState', 'reviewNote', 'rejectBtn', 'approveBtn',
+  'selectedFrame', 'frameBatch', 'frameState', 'reviewNote', 'rejectBtn', 'approveBtn', 'regenerateFrameBtn',
   // 导出门禁
   'gateMessage', 'approvalProgress', 'approvalText',
   // 洋葱皮 / 图集打包 / 锚点
   'onionToggle', 'onionPrev', 'onionNext',
   'packerModal', 'closePackerBtn', 'spriteCanvas', 'spriteJson', 'spriteMeta', 'downloadPackBtn', 'anchorCoords',
+  // 生成中心
+  'generationModal', 'closeGenerateBtn', 'providerDot', 'providerStatus', 'genPortrait', 'genCharacterName',
+  'genView', 'genAction', 'genMode', 'genFrameField', 'genFrame', 'startGenerationBtn', 'genBatch',
+  'genPercent', 'genProgress', 'genMessage', 'candidateGrid', 'promoteJobBtn',
 ]);
 
 // ────────────────────────────────────────────────────────────
@@ -114,7 +141,12 @@ function currentAsset() {
 }
 
 function reviewKey() {
-  return `${state.view}:${state.action}`;
+  return `${activeCharacterId}:${state.view}:${state.action}`;
+}
+
+function frameSrc(asset, index) {
+  const source = asset.frames[index];
+  return asset.revision ? `${source}?v=${asset.revision}` : source;
 }
 
 // 惰性初始化某资产的逐帧审核数组：预置退回帧，其余用资产的默认状态。
@@ -146,8 +178,8 @@ function renderActions() {
 
 function renderTimeline(asset) {
   const reviews = ensureReviews(asset);
-  els.timeline.innerHTML = asset.frames.map((src, index) =>
-    `<button class="frame-tile ${index === state.frame ? 'active' : ''}" data-frame="${index}"><img src="${src}" alt="第 ${index + 1} 帧"><i class="${reviews[index]}"></i><span><b>#${String(index + 1).padStart(2, '0')}</b><small>${REVIEW_LABELS_SHORT[reviews[index]]}</small></span></button>`).join('');
+  els.timeline.innerHTML = asset.frames.map((_, index) =>
+    `<button class="frame-tile ${index === state.frame ? 'active' : ''}" data-frame="${index}"><img src="${frameSrc(asset, index)}" alt="第 ${index + 1} 帧"><i class="${reviews[index]}"></i><span><b>#${String(index + 1).padStart(2, '0')}</b><small>${REVIEW_LABELS_SHORT[reviews[index]]}</small></span></button>`).join('');
   els.timeline.querySelectorAll('button').forEach((button) =>
     button.addEventListener('click', () => {
       pauseForReview();
@@ -162,7 +194,7 @@ function renderFrameOnly() {
   const asset = currentAsset();
   if (!asset) return;
 
-  els.characterFrame.src = asset.frames[state.frame];
+  els.characterFrame.src = frameSrc(asset, state.frame);
   els.frameCounter.textContent = `${String(state.frame + 1).padStart(2, '0')} / ${String(asset.frames.length).padStart(2, '0')}`;
   els.timeCounter.textContent = `${(state.frame / FIXED_FPS).toFixed(2)} s`;
   els.selectedFrame.textContent = `#${String(state.frame + 1).padStart(2, '0')}`;
@@ -186,8 +218,8 @@ function renderFrameOnly() {
   if (els.onionToggle.checked) {
     const prevIdx = (state.frame - 1 + asset.frames.length) % asset.frames.length;
     const nextIdx = (state.frame + 1) % asset.frames.length;
-    els.onionPrev.src = asset.frames[prevIdx];
-    els.onionNext.src = asset.frames[nextIdx];
+    els.onionPrev.src = frameSrc(asset, prevIdx);
+    els.onionNext.src = frameSrc(asset, nextIdx);
     els.onionPrev.classList.add('show');
     els.onionNext.classList.add('show');
   } else {
@@ -216,6 +248,8 @@ function render() {
   renderActions();
   const asset = currentAsset();
   const view = library[state.view];
+  els.characterName.textContent = characterCatalog[activeCharacterId].label;
+  els.characterSelect.value = activeCharacterId;
 
   els.viewTabs.querySelectorAll('button').forEach((button) =>
     button.classList.toggle('active', button.dataset.view === state.view));
@@ -258,7 +292,7 @@ function render() {
 // ────────────────────────────────────────────────────────────
 
 async function analyze(asset) {
-  const results = await Promise.all(asset.frames.map((src) => new Promise((resolve) => {
+  const results = await Promise.all(asset.frames.map((_, index) => new Promise((resolve) => {
     const image = new Image();
     image.onload = () => {
       const canvas = document.createElement('canvas');
@@ -284,7 +318,7 @@ async function analyze(asset) {
       resolve({ width: canvas.width, height: canvas.height, minX, maxX, minY, maxY, opaque, cx: sumX / opaque, cy: sumY / opaque });
     };
     image.onerror = () => resolve(null);
-    image.src = src;
+    image.src = frameSrc(asset, index);
   })));
 
   const valid = results.filter(Boolean);
@@ -444,7 +478,7 @@ function setMoveKey(direction, pressed) {
 function gamePayload() {
   const asset = currentAsset();
   if (!asset) return null;
-  return { type: `${PREVIEW_NS}:preview-animation`, action: asset.key, view: state.view, fps: FIXED_FPS, loop: els.loopToggle.checked };
+  return { type: `${PREVIEW_NS}:preview-animation`, character: activeCharacterId, action: asset.key, view: state.view, fps: FIXED_FPS, loop: els.loopToggle.checked };
 }
 
 function syncGame() {
@@ -533,10 +567,10 @@ async function exportSpriteSheet() {
   const canvas = els.spriteCanvas;
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
-  const imgs = await Promise.all(asset.frames.map((src) => new Promise((resolve) => {
+  const imgs = await Promise.all(asset.frames.map((_, index) => new Promise((resolve) => {
     const img = new Image();
     img.onload = () => resolve(img);
-    img.src = src;
+    img.src = frameSrc(asset, index);
   })));
 
   const w = 256, h = 256;
@@ -545,7 +579,7 @@ async function exportSpriteSheet() {
 
   const json = {
     frames: {},
-    meta: { app: 'Windup Asset Lab', image: `lamplighter-${asset.key}.png`, format: 'RGBA8888', size: { w: canvas.width, h: canvas.height }, scale: '1' },
+    meta: { app: 'Windup Asset Lab', image: `${activeCharacterId}-${asset.key}.png`, format: 'RGBA8888', size: { w: canvas.width, h: canvas.height }, scale: '1' },
   };
 
   imgs.forEach((img, i) => {
@@ -569,11 +603,11 @@ async function exportSpriteSheet() {
   els.downloadPackBtn.onclick = () => {
     const link = document.createElement('a');
     link.href = dataUrl;
-    link.download = `lamplighter-${asset.key}.png`;
+    link.download = `${activeCharacterId}-${asset.key}.png`;
     link.click();
     const jsonLink = document.createElement('a');
     jsonLink.href = URL.createObjectURL(new Blob([els.spriteJson.value], { type: 'application/json' }));
-    jsonLink.download = `lamplighter-${asset.key}.json`;
+    jsonLink.download = `${activeCharacterId}-${asset.key}.json`;
     jsonLink.click();
   };
 }
@@ -590,8 +624,165 @@ function setReview(value) {
 }
 
 // ────────────────────────────────────────────────────────────
+// 多角色目录与生成中心
+function firstAvailableAction(view = state.view) {
+  return actionOrder.find((key) => library[view]?.[key]) || null;
+}
+
+function switchCharacter(characterId) {
+  activeCharacterId = characterId;
+  library = characterCatalog[characterId].library;
+  state.action = library[state.view]?.[state.action] ? state.action : firstAvailableAction() || 'walk';
+  state.frame = 0;
+  movement.x = 0;
+  render();
+}
+
+async function requestJson(path, options = {}) {
+  const response = await fetch(path, { ...options, headers: { 'Content-Type': 'application/json', ...(options.headers || {}) } });
+  const result = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
+  if (!response.ok) throw new Error(result.error || `HTTP ${response.status}`);
+  return result;
+}
+
+function setGenerationMode() {
+  const single = els.genMode.value === 'single';
+  els.genFrameField.style.opacity = single ? '1' : '.38';
+  els.genFrame.disabled = !single;
+}
+
+async function openGenerationStudio(singleFrame = false) {
+  const character = characterCatalog[activeCharacterId];
+  els.genPortrait.src = character.base;
+  els.genCharacterName.textContent = character.label;
+  els.genView.value = state.view;
+  els.genAction.value = state.action;
+  els.genMode.value = singleFrame ? 'single' : 'full';
+  els.genFrame.value = state.frame + 1;
+  setGenerationMode();
+  els.generationModal.showModal();
+  try {
+    const health = await requestJson('/api/health');
+    els.providerDot.className = 'ready';
+    els.providerStatus.textContent = health.demo
+      ? 'Demo 管线已就绪 · 不消耗 API'
+      : health.configured ? `${health.model} · 已配置` : '后端已就绪 · 待配置密钥';
+  } catch (error) {
+    els.providerDot.className = 'error';
+    els.providerStatus.textContent = '生成后端未启动';
+    els.genMessage.textContent = `请用 python3 server/app.py --demo 启动完整服务。${error.message}`;
+  }
+}
+
+function renderGenerationJob(job) {
+  generationState.job = job;
+  els.genBatch.textContent = job.batch || job.id;
+  els.genPercent.textContent = `${job.progress || 0}%`;
+  els.genProgress.style.width = `${job.progress || 0}%`;
+  els.genMessage.textContent = job.message || '';
+  els.startGenerationBtn.disabled = ['queued', 'generating', 'processing'].includes(job.status);
+  els.promoteJobBtn.disabled = job.status !== 'awaiting_review';
+  if (job.outputs?.length) {
+    els.candidateGrid.innerHTML = job.outputs.map((output) => `
+      <article class="candidate-card">
+        <img src="${output.url}?v=${job.updatedAt || Date.now()}" alt="候选第 ${output.frameIndex + 1} 帧">
+        <div><b>#${String(output.frameIndex + 1).padStart(2, '0')}</b><span>${job.request.mode === 'single' ? '单帧修复' : '动作相位'}</span></div>
+      </article>`).join('');
+  }
+}
+
+async function pollGeneration(jobId) {
+  clearTimeout(generationState.poll);
+  try {
+    const job = await requestJson(`/api/generations/${jobId}`);
+    renderGenerationJob(job);
+    if (['queued', 'generating', 'processing'].includes(job.status)) generationState.poll = setTimeout(() => pollGeneration(jobId), 700);
+  } catch (error) {
+    els.startGenerationBtn.disabled = false;
+    els.genMessage.textContent = `任务查询失败：${error.message}`;
+  }
+}
+
+async function startGeneration() {
+  els.startGenerationBtn.disabled = true;
+  els.promoteJobBtn.disabled = true;
+  els.candidateGrid.innerHTML = '<div class="candidate-empty">正在创建任务…</div>';
+  try {
+    const job = await requestJson('/api/generations', {
+      method: 'POST',
+      body: JSON.stringify({ character: activeCharacterId, view: els.genView.value, action: els.genAction.value,
+        mode: els.genMode.value, frameIndex: Math.max(0, Math.min(7, Number(els.genFrame.value) - 1)) }),
+    });
+    renderGenerationJob(job);
+    pollGeneration(job.id);
+  } catch (error) {
+    els.startGenerationBtn.disabled = false;
+    els.candidateGrid.innerHTML = '<div class="candidate-empty">任务未创建</div>';
+    els.genMessage.textContent = `生成失败：${error.message}`;
+  }
+}
+
+function officialFrames(characterId, view, action, count) {
+  if (characterId === 'lamplighter') {
+    const base = view === 'side' && action === 'walk' ? `${root}/frames` : `${root}/views/${view}`;
+    return makeFrames(base, action, count);
+  }
+  return makeFrames(`${teammateRoot}/${characterId}/views/${view}`, action, count);
+}
+
+function adoptJobInLibrary(job) {
+  const { view, action, mode, frameIndex } = job.request;
+  const viewLibrary = library[view];
+  let asset = viewLibrary[action];
+  const count = mode === 'full' ? Math.max(8, job.outputs.length) : Math.max(asset?.frames.length || 0, frameIndex + 1);
+  if (!asset) {
+    asset = viewLibrary[action] = { label: actionLabels[action][0], key: action,
+      frames: officialFrames(activeCharacterId, view, action, count), fps: 8,
+      loop: !['jump', 'lantern'].includes(action), batch: job.batch, initial: 'pending' };
+  } else if (mode === 'full' || asset.frames.length < count) {
+    asset.frames = officialFrames(activeCharacterId, view, action, count);
+  }
+  asset.batch = job.batch;
+  asset.revision = Date.now();
+  state.view = view;
+  state.action = action;
+  state.frame = mode === 'single' ? frameIndex : 0;
+  if (mode === 'full') state.reviews[reviewKey()] = asset.frames.map(() => 'pending');
+  else ensureReviews(asset)[frameIndex] = 'pending';
+  localStorage.setItem('windup-review-state', JSON.stringify(state.reviews));
+  render();
+}
+
+async function promoteGeneration() {
+  const job = generationState.job;
+  if (!job) return;
+  els.promoteJobBtn.disabled = true;
+  els.promoteJobBtn.textContent = '正在采用…';
+  try {
+    const approved = await requestJson(`/api/generations/${job.id}/promote`, { method: 'POST', body: '{}' });
+    renderGenerationJob(approved);
+    adoptJobInLibrary(approved);
+    els.promoteJobBtn.textContent = '已进入审核台';
+    els.genMessage.textContent = '候选资产已采用，原文件已自动备份。';
+  } catch (error) {
+    els.promoteJobBtn.disabled = false;
+    els.promoteJobBtn.textContent = '接受候选资产';
+    els.genMessage.textContent = `采用失败：${error.message}`;
+  }
+}
+
 // 事件绑定
 // ────────────────────────────────────────────────────────────
+
+els.characterSelect.innerHTML = Object.entries(characterCatalog)
+  .map(([id, character]) => `<option value="${id}">${character.label}</option>`).join('');
+els.characterSelect.addEventListener('change', () => switchCharacter(els.characterSelect.value));
+els.openGenerateBtn.addEventListener('click', () => openGenerationStudio(false));
+els.regenerateFrameBtn.addEventListener('click', () => openGenerationStudio(true));
+els.closeGenerateBtn.addEventListener('click', () => els.generationModal.close());
+els.genMode.addEventListener('change', setGenerationMode);
+els.startGenerationBtn.addEventListener('click', startGeneration);
+els.promoteJobBtn.addEventListener('click', promoteGeneration);
 
 // 视角切换：带离场/入场过渡动画。
 els.viewTabs.querySelectorAll('button').forEach((button) =>
