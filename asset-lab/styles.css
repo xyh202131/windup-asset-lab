@@ -511,6 +511,15 @@ body.sidebar-collapsed .sidebar { transform: translateX(-120%) !important; }
 .mode-card.primary{background:rgba(29,29,31,.94);border-color:rgba(255,255,255,.12);color:#fff;box-shadow:0 20px 55px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.13)}.mode-card.primary .mode-icon{background:#343438}.mode-card.primary small,.mode-card.primary em,.mode-card.primary>i{color:#aaaab0}.mode-card.primary:hover{border-color:rgba(255,255,255,.24);box-shadow:0 26px 65px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.16)}
 @media(max-width:860px){.mode-cards{left:50%!important;top:calc(50% + 190px)!important;grid-template-columns:1fr 1fr;width:min(500px,calc(100vw - 32px))!important;transform:translate(-50%,18px) scale(.96)}.mode-cards.visible{transform:translate(-50%,0) scale(1)}.mode-cards.leaving{transform:translate(-50%,14px) scale(.97)}}
 
+/* Animated mouse cue after entering the editor */
+.character-click-guide{position:absolute;z-index:30;left:50%;top:calc(50% - 100px);width:220px;height:120px;pointer-events:none;opacity:1;transition:opacity .2s ease,transform .2s ease}.character-click-guide.leaving{opacity:0;transform:scale(.96)}
+.character-click-guide b{position:absolute;left:30px;top:78px;padding:8px 13px;border:1px solid rgba(0,0,0,.08);border-radius:999px;background:rgba(255,255,255,.94);box-shadow:0 10px 30px rgba(0,0,0,.13);color:#1d1d1f;font-size:11px;white-space:nowrap;backdrop-filter:blur(16px);animation:guide-label 1.8s ease-in-out infinite}
+.guide-cursor{position:absolute;left:-11px;top:33px;width:22px;height:34px;border:2px solid #1d1d1f;border-radius:12px;background:rgba(255,255,255,.96);box-shadow:0 7px 18px rgba(0,0,0,.18);animation:guide-mouse 1.8s cubic-bezier(.16,1,.3,1) infinite}.guide-cursor:before{content:"";position:absolute;left:8px;top:5px;width:2px;height:7px;border-radius:2px;background:#1d1d1f}
+.guide-ripple{position:absolute;left:0;top:50px;width:16px;height:16px;border:2px solid rgba(29,29,31,.58);border-radius:50%;transform:translate(-50%,-50%) scale(.3);opacity:0;animation:guide-ripple 1.8s ease-out infinite}
+@keyframes guide-mouse{0%{opacity:0;transform:translate(105px,-55px) scale(.9)}18%{opacity:1}56%,72%{opacity:1;transform:translate(0,0) scale(1)}64%{transform:translate(0,2px) scale(.9)}100%{opacity:0;transform:translate(0,0) scale(1)}}
+@keyframes guide-ripple{0%,55%{opacity:0;transform:translate(-50%,-50%) scale(.3)}62%{opacity:.8}88%,100%{opacity:0;transform:translate(-50%,-50%) scale(2.5)}}
+@keyframes guide-label{0%,15%,100%{opacity:.58}42%,82%{opacity:1}}
+
 .sidebar { animation-delay: 2.8s !important; }
 .view-toolbar { animation-delay: 2.9s !important; }
 .inspector { animation-delay: 3.0s !important; }

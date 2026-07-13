@@ -579,6 +579,43 @@ function showClickPrompt(text, left, top, ttl) {
   setTimeout(() => prompt.remove(), ttl);
 }
 
+let characterClickGuide = null;
+
+function hideCharacterClickGuide() {
+  if (!characterClickGuide) return;
+  characterClickGuide.classList.add('leaving');
+  const guide = characterClickGuide;
+  characterClickGuide = null;
+  setTimeout(() => guide.remove(), 220);
+}
+
+function showCharacterClickGuide() {
+  hideCharacterClickGuide();
+  const guide = document.createElement('div');
+  guide.className = 'character-click-guide';
+  guide.innerHTML = '<span class="guide-ripple"></span><i class="guide-cursor"></i><b>点击人物开始移动</b>';
+  els.stage.appendChild(guide);
+  characterClickGuide = guide;
+  setTimeout(() => {
+    if (characterClickGuide === guide) hideCharacterClickGuide();
+  }, 5200);
+}
+
+function startCharacterWalk() {
+  if (!library[state.view]?.walk) return;
+  hideCharacterClickGuide();
+  state.action = 'walk';
+  state.frame = 0;
+  state.playing = true;
+  movement.x = 0;
+  movement.direction = 1;
+  movement.auto = true;
+  movement.wasMoving = false;
+  els.autoWalkBtn.classList.add('active');
+  els.autoWalkBtn.textContent = '停止巡走';
+  render();
+}
+
 // ────────────────────────────────────────────────────────────
 // 图集打包导出（仅在导出门禁开启时可触发）
 // ────────────────────────────────────────────────────────────
@@ -810,7 +847,10 @@ els.generationModeCard.addEventListener('click', (event) => {
 });
 els.editorModeCard.addEventListener('click', (event) => {
   event.stopPropagation();
-  closeModeCards(() => setDrawer(false));
+  closeModeCards(() => {
+    setDrawer(false);
+    setTimeout(showCharacterClickGuide, 320);
+  });
 });
 els.regenerateFrameBtn.addEventListener('click', () => openGenerationStudio(true));
 els.closeGenerateBtn.addEventListener('click', () => els.generationModal.close());
@@ -876,6 +916,12 @@ window.addEventListener('mousemove', (event) => {
 window.addEventListener('mouseup', () => {
   drag.active = false;
   els.characterFrame.style.cursor = '';
+});
+
+els.characterFrame.addEventListener('click', (event) => {
+  if (drag.moved || !bootState.complete || !bootState.choiceMade) return;
+  event.stopPropagation();
+  startCharacterWalk();
 });
 
 // 点击舞台空白处：在 idle / walk / run 之间循环切换（拖拽过则忽略这次点击）。
