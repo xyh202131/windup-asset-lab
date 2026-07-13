@@ -34,3 +34,7 @@ assets/resources/character.zip.meta
 /generation-data/provenance.jsonl
 .env
 .env.*
+
+# Python
+__pycache__/
+venv/
