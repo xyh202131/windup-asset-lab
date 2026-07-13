@@ -649,3 +649,86 @@ textarea:focus { transform: translateY(-1px); box-shadow: 0 0 0 4px rgba(0,0,0,.
     transition: none !important;
   }
 }
+
+/* Fine-grained global choreography */
+.tree-row,
+.action-item,
+.accordion-item,
+.status,
+.saved,
+.candidate-card,
+.generation-identity,
+.mode-icon,
+.progress i,
+.job-progress i {
+  transition: transform .28s var(--motion-spring), opacity .22s ease,
+    background-color .22s ease, color .22s ease, border-color .22s ease,
+    box-shadow .28s var(--motion-spring), width .32s var(--motion-spring);
+}
+.tree-row:hover,
+.action-item:hover { transform: translateX(3px); }
+.tree-row:active,
+.action-item:active { transform: translateX(1px) scale(.985); }
+.accordion-item:hover { background: rgba(255,255,255,.38); }
+.accordion-item[open] { background: rgba(255,255,255,.5); }
+.status { will-change: color, border-color, background-color; }
+.frame-tile { animation: tile-arrive .44s var(--motion-spring) both; }
+.frame-tile:nth-child(2) { animation-delay: 25ms; }
+.frame-tile:nth-child(3) { animation-delay: 50ms; }
+.frame-tile:nth-child(4) { animation-delay: 75ms; }
+.frame-tile:nth-child(5) { animation-delay: 100ms; }
+.frame-tile:nth-child(6) { animation-delay: 125ms; }
+.frame-tile:nth-child(7) { animation-delay: 150ms; }
+.frame-tile:nth-child(8) { animation-delay: 175ms; }
+.qc-row { animation: detail-arrive .34s var(--motion-spring) both; }
+.qc-row:nth-child(2) { animation-delay: 30ms; }
+.qc-row:nth-child(3) { animation-delay: 60ms; }
+.qc-row:nth-child(4) { animation-delay: 90ms; }
+.qc-row:nth-child(5) { animation-delay: 120ms; }
+.qc-row:nth-child(6) { animation-delay: 150ms; }
+.qc-row:nth-child(7) { animation-delay: 180ms; }
+.mode-cards.visible .mode-card { animation: mode-card-arrive .5s var(--motion-spring) both; }
+.mode-cards.visible .mode-card + .mode-card { animation-delay: 70ms; }
+.mode-card:hover .mode-icon { transform: rotate(-4deg) scale(1.06); }
+.generation-modal[open] { animation: modal-arrive .52s var(--motion-spring) both; }
+.generation-modal[open]::backdrop { animation: backdrop-arrive .35s ease-out both; }
+.candidate-card { animation: tile-arrive .42s var(--motion-spring) both; }
+.candidate-card:hover { transform: translateY(-3px); border-color: rgba(0,0,0,.18); box-shadow: 0 14px 30px rgba(0,0,0,.1); }
+.playback button,
+.view-toolbar button,
+.review-actions button,
+.export-actions button { will-change: transform; }
+@keyframes uiFadeIn {
+  0% { opacity: 0; transform: translateY(14px) scale(.985); filter: blur(8px); }
+  72% { opacity: 1; transform: translateY(-1px) scale(1.002); filter: blur(0); }
+  100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+@keyframes tile-arrive {
+  from { opacity: 0; transform: translateY(8px) scale(.97); filter: blur(3px); }
+  to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+@keyframes detail-arrive {
+  from { opacity: 0; transform: translateX(-6px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes mode-card-arrive {
+  from { opacity: 0; transform: translateX(14px) scale(.97); filter: blur(5px); }
+  to { opacity: 1; transform: translateX(0) scale(1); filter: blur(0); }
+}
+@keyframes modal-arrive {
+  from { opacity: 0; transform: translateY(18px) scale(.975); filter: blur(7px); }
+  to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+@keyframes backdrop-arrive {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tree-row, .action-item, .accordion-item, .status, .saved, .candidate-card,
+  .generation-identity, .mode-icon, .progress i, .job-progress i,
+  .frame-tile, .qc-row, .mode-card, .generation-modal[open],
+  .generation-modal[open]::backdrop {
+    animation: none !important;
+    transition: none !important;
+  }
+}
