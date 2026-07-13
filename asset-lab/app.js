@@ -503,6 +503,7 @@ function syncGame() {
 // ────────────────────────────────────────────────────────────
 
 let drawerCloseTimer = null;
+let drawerOpenAnimationTimer = null;
 
 function setDrawer(collapsed) {
   document.body.classList.toggle('sidebar-collapsed', collapsed);
@@ -512,7 +513,14 @@ function setDrawer(collapsed) {
 
 function openDrawer() {
   clearTimeout(drawerCloseTimer);
+  clearTimeout(drawerOpenAnimationTimer);
+  document.body.classList.remove('drawer-opening');
+  void document.body.offsetWidth;
+  document.body.classList.add('drawer-opening');
   setDrawer(false);
+  drawerOpenAnimationTimer = setTimeout(() => {
+    document.body.classList.remove('drawer-opening');
+  }, 560);
 }
 
 function scheduleDrawerClose() {
