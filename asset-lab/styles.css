@@ -428,30 +428,45 @@ body.drawer-opening .sidebar .batch-card { animation-delay: .19s; }
 /* 7. Accordion Drawers for Inspector */
 .accordion-inspector {
   padding: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  backdrop-filter: none !important;
-  border: none !important;
-  gap: 12px;
+  background: rgba(255,255,255,.94) !important;
+  box-shadow: 0 18px 54px rgba(0,0,0,.09), inset 0 1px 0 rgba(255,255,255,.9) !important;
+  backdrop-filter: blur(28px) saturate(145%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(145%) !important;
+  border: 1px solid rgba(0,0,0,.07) !important;
+  border-radius: 22px !important;
+  gap: 0;
   display: flex;
   flex-direction: column;
 }
 
-.accordion-item {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border-radius: 24px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.04);
-  border: 1px solid rgba(0,0,0,0.04);
-  overflow: hidden;
-  transition: all 0.2s ease;
+.inspector-title {
+  display: grid;
+  gap: 7px;
+  padding: 20px 18px 17px;
+  border-bottom: 1px solid rgba(0,0,0,.07);
 }
+.inspector-title div { display: grid; gap: 4px; }
+.inspector-title small { color: #8e8e93; font-size: 10px; font-weight: 700; letter-spacing: .13em; }
+.inspector-title h1 { margin: 0; color: #111; font-size: 22px; line-height: 1.15; letter-spacing: -.035em; }
+.inspector-title > span { color: #8e8e93; font-size: 11px; }
+
+.accordion-item {
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  border: 0;
+  border-bottom: 1px solid rgba(0,0,0,.07);
+  overflow: hidden;
+  transition: background .18s ease;
+}
+.accordion-item:last-child { border-bottom: 0; }
 
 .accordion-header {
   display: flex !important;
   justify-content: space-between !important;
   align-items: center !important;
-  padding: 16px !important;
+  min-height: 60px;
+  padding: 14px 18px !important;
   cursor: pointer !important;
   list-style: none !important;
   user-select: none !important;
@@ -461,10 +476,11 @@ body.drawer-opening .sidebar .batch-card { animation-delay: .19s; }
   display: none !important;
 }
 .accordion-header:hover {
-  background: rgba(0,0,0,0.02) !important;
+  background: rgba(0,0,0,.025) !important;
 }
 .accordion-item[open] .accordion-header {
-  border-bottom: 1px solid rgba(0,0,0,0.05) !important;
+  border-bottom: 0 !important;
+  background: rgba(0,0,0,.018) !important;
 }
 
 .accordion-header .header-content { display: flex; flex-direction: column; }
@@ -475,7 +491,7 @@ body.drawer-opening .sidebar .batch-card { animation-delay: .19s; }
   margin: 0 0 4px 0 !important;
 }
 .accordion-header .header-content h2 {
-  font-size: 16px !important;
+  font-size: 15px !important;
   margin: 0 !important;
   color: #111 !important;
 }
@@ -485,12 +501,19 @@ body.drawer-opening .sidebar .batch-card { animation-delay: .19s; }
 }
 
 .accordion-body {
-  padding: 16px !important;
+  padding: 0 18px 18px !important;
 }
 
 .accordion-item .spec-grid { padding: 0 !important; margin: 0 !important; border: none !important; }
-.accordion-item .frame-meta { border: none !important; padding: 0 0 12px 0 !important; }
+.accordion-item .frame-meta { border: 0 !important; border-radius: 14px; padding: 10px 11px !important; }
 .accordion-item textarea#reviewNote { margin-bottom: 12px !important; }
+.accordion-item textarea { border-radius: 12px; font-size: 11px; }
+.accordion-item button { border-radius: 11px !important; font-size: 11px; }
+.accordion-header > span:not(.status),
+.accordion-body p,
+.accordion-body span,
+.accordion-body small { font-size: 11px !important; }
+.accordion-item .status { border-radius: 999px; font-size: 10px; }
 
 /* 8. First Screen Experience & Clean Canvas */
 .ground-plane {
